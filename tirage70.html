@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tirage 9 — Passé / Présent / Futur (profondeur + PDF)</title>
+<style>
+  :root{--bg:#0b0b0b;--bg2:#111;--fg:#eee;--muted:#a8a8a8;--border:#2a2a2a;--accent:#23c45e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
+  h1{margin:0 0 12px 0}
+  h2{margin:18px 0 8px 0;font-size:18px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  input{flex:1;min-width:260px;padding:10px;border-radius:10px;border:1px solid var(--border);background:#121212;color:var(--fg)}
+  .btn{padding:10px 14px;border-radius:12px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+  .btn.secondary{background:#282828}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:12px}
+  .card{background:#141414;border:1px solid var(--border);border-radius:14px;padding:12px}
+  .label{color:#aaa;font-size:13px}
+  .title{font-weight:bold;margin:4px 0 6px}
+  .text{color:#cfcfcf;font-size:14px}
+  .zone-explain{margin-top:10px;padding:12px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);white-space:pre-wrap}
+  .summary{margin-top:16px;padding:12px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);white-space:pre-wrap}
+  .note{color:var(--muted);font-size:12px;margin-top:8px}
+  @media print{
+    body{background:#fff;color:#000}
+    .wrap{max-width:100%;padding:0 12mm}
+    .row, .note{display:none}
+    .card{background:#fff;border:1px solid #ccc}
+    .zone-explain, .summary{background:#fff;border:1px solid #ccc}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎴 Tirage 9 cartes — Passé / Présent / Futur</h1>
+  <div class="row">
+    <input id="question" placeholder="Écrivez ici votre question avant le tirage..." />
+    <button id="draw" class="btn">Tirer 9 cartes</button>
+    <button id="print" class="btn secondary">Imprimer / PDF</button>
+  </div>
+  <div id="out"></div>
+  <div class="note">Conseil : posez une question ouverte (ex. « Quelle énergie m’aide à avancer dans ce projet ? »).</div>
+</div>
+
+<script>
+// ===== Jeu complet (70 cartes) =====
+var DECK = [
+  {number:1,name:"Le Soleil",meaning:"Clarté, succès, illumination, énergie positive."},
+  {number:2,name:"La Lune",meaning:"Intuition, émotions cachées, illusions, inconscient."},
+  {number:3,name:"L’Étoile",meaning:"Espoir, inspiration, guidance spirituelle."},
+  {number:4,name:"La Mort",meaning:"Transformation, fin de cycle, renaissance."},
+  {number:5,name:"Le Monde",meaning:"Accomplissement, réalisation, harmonie."},
+  {number:6,name:"La Tour",meaning:"Choc, crise salutaire, fondations à repenser."},
+  {number:7,name:"La Clef",meaning:"Solution, ouverture, réponse trouvée."},
+  {number:8,name:"Le Livre",meaning:"Savoir caché, secrets, enseignement."},
+  {number:9,name:"L’Arbre",meaning:"Croissance, enracinement, santé, stabilité."},
+  {number:10,name:"La Maison",meaning:"Famille, foyer, sécurité intérieure."},
+  {number:11,name:"Le Voyage",meaning:"Déplacement, changement, ouverture d’esprit."},
+  {number:12,name:"Le Serpent",meaning:"Manipulation, tentation, trahison."},
+  {number:13,name:"Le Chien",meaning:"Fidélité, loyauté, ami sincère."},
+  {number:14,name:"La Balance",meaning:"Justice, équilibre, choix à faire."},
+  {number:15,name:"La Croix",meaning:"Épreuve, destin, spiritualité, sacrifice."},
+  {number:16,name:"La Main tendue",meaning:"Aide, soutien, réconciliation."},
+  {number:17,name:"Le Cœur",meaning:"Amour, émotions profondes, sincérité."},
+  {number:18,name:"Les Chaînes",meaning:"Attachement, dépendance, blocage karmique."},
+  {number:19,name:"L’Ancre",meaning:"Stabilité, persévérance, fidélité."},
+  {number:20,name:"Le Pont",meaning:"Transition, passage, solution de lien."},
+  {number:21,name:"Les Nuages",meaning:"Confusion, incertitude, doutes."},
+  {number:22,name:"Le Miroir",meaning:"Réflexion, vérité révélée, introspection."},
+  {number:23,name:"L’Oiseau",meaning:"Messages, communication, nouvelles."},
+  {number:24,name:"La Cloche",meaning:"Annonce, événement important, réveil."},
+  {number:25,name:"L’Enfant",meaning:"Nouveau départ, innocence, spontanéité."},
+  {number:26,name:"Le Masque",meaning:"Illusion, fausse apparence, dissimulation."},
+  {number:27,name:"L’Échelle",meaning:"Élévation, progression, ascension."},
+  {number:28,name:"Le Cadeau empoisonné",meaning:"Présent trompeur, piège déguisé, prudence."},
+  {number:29,name:"Le Temps",meaning:"Patience, cycle, maturité."},
+  {number:30,name:"La Couronne",meaning:"Victoire, reconnaissance, accomplissement."},
+  {number:31,name:"Le Feu",meaning:"Passion, énergie, colère, transformation."},
+  {number:32,name:"L’Eau",meaning:"Émotions, fluidité, purification."},
+  {number:33,name:"La Terre",meaning:"Ancrage, sécurité, ressources."},
+  {number:34,name:"L’Air",meaning:"Pensées, idées, communication."},
+  {number:35,name:"L’Arme",meaning:"Conflit, protection, défense."},
+  {number:36,name:"La Fleur",meaning:"Beauté, douceur, sensibilité."},
+  {number:37,name:"La Porte",meaning:"Ouverture, opportunité, choix."},
+  {number:38,name:"Le Jardin",meaning:"Sociabilité, abondance, échanges."},
+  {number:39,name:"La Route",meaning:"Choix, chemin de vie, décision."},
+  {number:40,name:"La Pluie",meaning:"Nettoyage, tristesse, purification."},
+  {number:41,name:"Le Tonnerre",meaning:"Révélation soudaine, bouleversement."},
+  {number:42,name:"L’Épée",meaning:"Décision, vérité, tranchant."},
+  {number:43,name:"La Coupe",meaning:"Amour, réceptivité, émotions partagées."},
+  {number:44,name:"La Cour",meaning:"Jugement, regard des autres, société."},
+  {number:45,name:"Le Trésor",meaning:"Richesse, valeur intérieure, dons cachés."},
+  {number:46,name:"La Boussole",meaning:"Orientation, direction, guidance."},
+  {number:47,name:"Le Cheval",meaning:"Énergie, vitalité, liberté."},
+  {number:48,name:"La Montagne",meaning:"Obstacle, épreuve, persévérance."},
+  {number:49,name:"L’Océan",meaning:"Immense potentiel, inconscient, profondeur."},
+  {number:50,name:"Le Phare",meaning:"Guidance, lumière dans l’obscurité."},
+  {number:51,name:"L’Aigle",meaning:"Vision claire, hauteur, sagesse."},
+  {number:52,name:"La Forêt",meaning:"Mystère, protection, quête."},
+  {number:53,name:"Le Verre brisé",meaning:"Cassure, rupture, vérité qui éclate."},
+  {number:54,name:"Le Désert",meaning:"Vide, solitude, épreuve intérieure."},
+  {number:55,name:"Le Sang",meaning:"Énergie vitale, héritage, force."},
+  {number:56,name:"Le Dragon",meaning:"Puissance, tentation, épreuve initiatique."},
+  {number:57,name:"Le Voile",meaning:"Illusion, vérité cachée, mystère."},
+  {number:58,name:"La Pierre",meaning:"Solidité, mémoire, constance."},
+  {number:59,name:"Le Navire",meaning:"Voyage, exploration, ouverture."},
+  {number:60,name:"Le Mur",meaning:"Blocage, limite, protection."},
+  {number:61,name:"La Source",meaning:"Pureté, guérison, nouveau départ."},
+  {number:62,name:"La Courbe",meaning:"Changement inattendu, détour nécessaire."},
+  {number:63,name:"Le Feu follet",meaning:"Illusion passagère, distraction."},
+  {number:64,name:"La Femme rouge",meaning:"Séduction, passion, influence magnétique."},
+  {number:65,name:"L’Homme noir",meaning:"Mystère, autorité, influence masculine."},
+  {number:66,name:"Le Cri",meaning:"Libération, vérité exprimée, colère."},
+  {number:67,name:"Le Cercle",meaning:"Éternel recommencement, unité."},
+  {number:68,name:"Le Scarabée",meaning:"Chance, transformation, protection."},
+  {number:69,name:"Le Calice",meaning:"Spiritualité, communion, offrande."},
+  {number:70,name:"L’Aurore",meaning:"Nouveau départ, lumière après l’ombre."}
+];
+
+// ===== Utilitaires =====
+function shuffle(a){ for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+function draw9(){ return shuffle(DECK.slice()).slice(0,9); }
+
+// ===== Analyse simple par mots-clés =====
+var POS = ["succès","lumière","espoir","protection","ouverture","solution","amour","stabilité","guérison","chance","harmonie","guidance","renaissance","accomplissement","soutien","fidélité","liberté","croissance","abondance"];
+var NEG = ["cassure","rupture","trahison","obstacle","blocage","épreuve","illusion","manipulation","colère","tristesse","vide","solitude","danger","dépendance","conflit","peur","fatigue","crise"];
+
+function score(text){
+  var t=(text||"").toLowerCase(), p=0, n=0;
+  POS.forEach(function(k){ if(t.indexOf(k)>-1) p++; });
+  NEG.forEach(function(k){ if(t.indexOf(k)>-1) n++; });
+  return {p:p,n:n};
+}
+
+function names(arr){
+  return arr.map(function(c){return c.name;}).join(", ");
+}
+
+// Génère des textes d’accompagnement pour donner de la profondeur
+function integrationEmotionnelle(pol){
+  if(pol.p>pol.n) return "Accueillez la confiance : respirez plus lentement, autorisez-vous à recevoir le soutien disponible.";
+  if(pol.n>pol.p) return "Autorisez les émotions à circuler sans jugement ; ancrez-vous (marche, eau, souffle) avant d’agir.";
+  return "Restez centrée : observez sans forcer, laissez venir le bon timing.";
+}
+function questionCoaching(zone){
+  if(zone==="Passé") return "Quelle leçon passée mérite d’être honorée pour ne plus se répéter ?";
+  if(zone==="Présent") return "Quel choix simple aujourd’hui ferait une vraie différence ?";
+  return "Quelle petite action concrète prépare au mieux ce futur désiré ?";
+}
+function action48(zone, pol){
+  var base = (pol.p>=pol.n) ? "Amplifier l’élan positif" : "Alléger la pression";
+  if(zone==="Passé") return base + " : écrire 3 leçons-clés et remercier la version passée de vous-même.";
+  if(zone==="Présent") return base + " : choisir 1 priorité et lui offrir 25 minutes de focus.";
+  return base + " : planifier un micro-pas daté (15 minutes) lié au futur souhaité.";
+}
+
+// Explication détaillée d’une zone (3 cartes)
+function zoneExplain(arr, label){
+  var theme = arr[1]; // carte centrale
+  var supports = arr.filter(function(c){ var s=score(c.meaning); return s.p > s.n; }).map(function(c){return c.name;});
+  var tensions = arr.filter(function(c){ var s=score(c.meaning); return s.n > s.p; }).map(function(c){return c.name;});
+  var pol = arr.map(function(c){return score(c.meaning);}).reduce(function(a,s){return {p:a.p+s.p,n:a.n+s.n};},{p:0,n:0});
+
+  var txt  = label + " — Thème central : " + theme.number + ". " + theme.name + " — " + theme.meaning + "\n";
+  txt += (supports.length ? "Soutiens : " + supports.join(", ") + ".\n" : "Soutiens : discrets, à cultiver.\n");
+  txt += (tensions.length ? "Tensions : " + tensions.join(", ") + ".\n" : "Tensions : peu marquées.\n");
+  txt += "Intégration émotionnelle : " + integrationEmotionnelle(pol) + "\n";
+  txt += "Question de coaching : " + questionCoaching(label) + "\n";
+  txt += "Action (48h) : " + action48(label, pol);
+  return txt;
+}
+
+// Résumé global
+function summarizeGlobal(cards, question){
+  var past = cards.slice(0,3), present = cards.slice(3,6), future = cards.slice(6,9);
+  var pol = cards.map(function(c){return score(c.meaning);}).reduce(function(a,s){return {p:a.p+s.p, n:a.n+s.n};},{p:0,n:0});
+  var trend = (pol.p>=pol.n) ? "Énergie générale constructive : ouvertures et solutions possibles."
+                              : "Énergie générale sous tension : clarifier les blocages avant l’élan.";
+  var pivot = present[1];
+  var txt  = "Question : " + (question || "non précisée") + "\n\n";
+  txt += "Passé : " + names(past) + "\n";
+  txt += "Présent : " + names(present) + "\n";
+  txt += "Futur : " + names(future) + "\n\n";
+  txt += trend + "\n";
+  txt += "Pivot (présent — carte centrale) : " + pivot.number + ". " + pivot.name + " — " + pivot.meaning;
+  return txt;
+}
+
+// ===== UI =====
+document.getElementById('draw').addEventListener('click', function(){
+  var q = document.getElementById('question').value;
+  var cards = draw9();
+  var out = document.getElementById('out');
+  out.innerHTML = "";
+
+  var zones = ["Passé","Présent","Futur"];
+  for(var z=0; z<3; z++){
+    var zoneDiv = document.createElement('div');
+    var h = document.createElement('h2'); h.textContent = zones[z];
+    zoneDiv.appendChild(h);
+
+    var g = document.createElement('div'); g.className = "grid";
+    for(var i=0;i<3;i++){
+      var c = cards[z*3+i];
+      var box = document.createElement('div'); box.className="card";
+      var lab = document.createElement('div'); lab.className="label"; lab.textContent = zones[z] + " " + (i+1);
+      var title = document.createElement('div'); title.className="title"; title.textContent = c.number + ". " + c.name;
+      var txt = document.createElement('div'); txt.className="text"; txt.textContent = c.meaning;
+      box.appendChild(lab); box.appendChild(title); box.appendChild(txt);
+      g.appendChild(box);
+    }
+    zoneDiv.appendChild(g);
+
+    var explain = document.createElement('div'); explain.className="zone-explain";
+    var start = z*3;
+    var arr = [cards[start], cards[start+1], cards[start+2]];
+    explain.textContent = zoneExplain(arr, zones[z]);
+    zoneDiv.appendChild(explain);
+
+    out.appendChild(zoneDiv);
+  }
+
+  var sum = document.createElement('div'); sum.className="summary";
+  sum.textContent = summarizeGlobal(cards, q);
+  out.appendChild(sum);
+});
+
+document.getElementById('print').addEventListener('click', function(){
+  window.print();
+});
+</script>
+</body>
+</html>
